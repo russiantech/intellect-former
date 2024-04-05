@@ -323,7 +323,7 @@ def execute_sql_script(sql_script):
             user="root",
             password=""
         ) """
-        
+
         conn = psycopg2.connect(
             host="dpg-co72lev109ks73816rcg-a",
             database="intellect",
@@ -353,7 +353,7 @@ def execute_sql_script(sql_script):
 def execute_sql_from_file():
     try:
         # Specify the directory where the .sql file is located
-        sql_file_path = './russiant.sql'
+        sql_file_path = './intellect.sql'
 
         # Check if the file exists
         if not os.path.exists(sql_file_path):
