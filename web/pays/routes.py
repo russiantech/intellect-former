@@ -33,6 +33,7 @@ def init_payment(course_slug):
                 "phonenumber": current_user.phone if current_user.is_authenticated and current_user.phone else None,
                 "name": current_user.name or current_user.username if current_user.is_authenticated else None
             },
+            "payment_options": "card, ussd, banktransfer, credit, mobilemoneyghana",
             "customizations": {
                 "title": f"{course.title} . Russian Developers Program",
                 "logo": url_for('static', filename='img/favicon/favicon.png', _external=True)

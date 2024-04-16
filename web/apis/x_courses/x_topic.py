@@ -252,36 +252,40 @@ def get_topic(topic_slug):
 def mark_completed():
     try:
         #return jsonify(request.json.get('topic_id'))
-    
-        if not db.session.is_active:
-            db.session.begin()
+        
+        with db.session.no_autoflush:
+            # with db.session.no_autoflush: prevents premature flush
+            # Begin a no_autoflush block-Perform multiple database operations-without triggering premature flushes
+                
+            if not db.session.is_active:
+                db.session.begin()
 
-        user_id = request.json.get('user_id') or current_user.id if current_user.is_authenticated else None
+            user_id = request.json.get('user_id') or current_user.id if current_user.is_authenticated else None
 
-        topic_id = request.json.get('topic_id')
+            topic_id = request.json.get('topic_id')
 
-        user = User.query.get(user_id)
-        topic = Topic.query.get(topic_id)
+            user = User.query.get(user_id)
+            topic = Topic.query.get(topic_id)
 
-        if user and topic:
-            # Check if the user has already completed this topic
-            if topic in user.topic_progress:
-                return jsonify({'message': 'Topic already marked as completed for You'}) #, 400
-            
-            # Mark the topic as completed for the user
-            user.topic_progress.append(topic)
+            if user and topic:
+                # Check if the user has already completed this topic
+                if topic in user.topic_progress:
+                    return jsonify({'message': 'Topic already marked as completed for You'}) #, 400
+                
+                # Mark the topic as completed for the user
+                user.topic_progress.append(topic)
 
-            # Update the completed topics count in the Enrollment model
-            enrollment = Enrollment.query.filter_by(user_id=user.id, course_id=topic.lessons.course.id).first()
-            if enrollment:
-                enrollment.completed_topics += 1
-                db.session.commit()
-                return jsonify({'message': 'Topic Marked As Completed For You'}), 200
-            else:
-                # Handle the case where enrollment is None
-                return jsonify({'message': f'Topic Not marked Cos You\'re Not Currently Enrolled On {topic.course.title}'}), 200
+                # Update the completed topics count in the Enrollment model
+                enrollment = Enrollment.query.filter_by(user_id=user.id, course_id=topic.lessons.course.id).first()
+                if enrollment:
+                    enrollment.completed_topics += 1
+                    db.session.commit()
+                    return jsonify({'message': 'Topic Marked As Completed For You'}), 200
+                else:
+                    # Handle the case where enrollment is None
+                    return jsonify({'message': f'Topic Not marked Cos You\'re Not Currently Enrolled On {topic.course.title}'}), 200
 
-        return jsonify({'message': f'User or topic not found {user_id, topic_id}'}) #, 404
+            return jsonify({'message': f'User or topic not found {user_id, topic_id}'}) #, 404
 
     except Exception as e:
         db.session.rollback()
