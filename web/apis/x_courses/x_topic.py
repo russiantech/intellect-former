@@ -122,15 +122,16 @@ def update_topic(topic_id):
         db.session.rollback()
         #traceback.print_exc()
         return handle_response(message=str(e), alert='alert-danger')
-
+ 
 # Deletes a topic
-@x_topic_bp.route('/delete_topic/<int:topic_id>', methods=['DELETE'])
-def delete_topic(topic_id):
+@x_topic_bp.route('/delete_topic/<string:topic_slug>', methods=['DELETE'])
+def delete_topic(topic_slug):
     try:
         if not db.session.is_active:
             db.session.begin()
 
-        topic = Topic.query.get_or_404(topic_id)
+        # topic = Topic.query.get_or_404(topic_id) //deletion via id
+        topic = Topic.query.filter_by(slug=topic_slug).first_or_404()
         db.session.delete(topic)
         db.session.commit()
     
@@ -243,7 +244,7 @@ def get_topic(topic_slug):
     include_desc = request.args.get('include_desc') == 'true'
     topic_data = topic.serialize(include_desc=include_desc)
     #print(topic_data)
-    print(topic_data['desc'])
+    print(topic_data['desc']) if include_desc else print('include_desc is off, desc no follow')
     return jsonify(topic_data)
 
 # Route to mark a topic as completed for a specific user
