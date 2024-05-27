@@ -1,0 +1,6 @@
+->
+Courses not displayed properly if only lessons/topics are added without the description also.
+This is more like a frontend issue or something.
+
+->
+When you try to perform crud on courses without logging in first, it's kind of an error with empty response.

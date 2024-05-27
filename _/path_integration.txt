@@ -1,0 +1,13 @@
+learning path
+
+-> can have multiple course(s)
+-> student can also enrol in a path and pay for a path
+-> path will be displayed.
+-> multiple path <---> multiple courses
+-> multiple path <---> multiple users
+-> should know if a user is enrolled in a path or not.
+-> A path's fee is the sum of the courses of each individual course in that path.
+-> relationship b/w path & courses(determines courses under specific path)
+-> relationship b/w path & users (determines users enrolled in specific path)
+-> 
+
