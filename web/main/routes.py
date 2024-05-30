@@ -76,8 +76,15 @@ def welcome(v=None):
 @main.route("/us")
 def us():
     brand = Brand.query.filter_by(id=2).first()
-    return render_template('welcome/us.html', brand=brand, title='Advanced technologies')
+    support_amount = "30, 40, 50, 70, 80, 90, 100, 200, 300, 400, 500"
+    return render_template('welcome/us.html', support_amount=support_amount, brand=brand, title='Intellect')
 
+""" @main.route("/")
+def us():
+    brand = Brand.query.filter_by(id=2).first()
+    return render_template('welcome/us.html', brand=brand, title='Intellect')
+ """
+ 
 @main.route("/")
 @login_required
 #@confirm_email
