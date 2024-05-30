@@ -434,13 +434,44 @@
 
                 <br>
                 <!--  -->
-                <h1>Support us today</h1>
+                <h1 id="support_us_h">Support us today</h1>
+                <style>
+                    
+                    #support_us_h {
+                        color: hsl(0, 0%, 28%);
+                        font-size: 50px;
+                        font-weight: bold;
+                        font-family: monospace;
+                        letter-spacing: 7px;
+                        cursor: pointer;
+                        margin-right: 5px;
+                        transition: 0.5s ease-out;
+                        animation: slide 2s infinite alternate, glow 1.5s infinite alternate;
+                    }
+            
+                    @keyframes slide {
+                        0% { margin-left: 0; }
+                        100% { margin-left: 30px; }
+                    }
+            
+                    @keyframes glow {
+                        0% {
+                            color: hsl(0, 0%, 28%);
+                            text-shadow: none;
+                        }
+                        100% {
+                            color: #fff;
+                            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #fff;
+                        }
+                    }
+</style>
+
                 <div class="row mb-5">
                     <div class="col-12 col-xxl-auto mb-5">
                         <div class="card h-100-card sw-xxl-40">
                             <div class="card-body row g-0">
 
-                                <div class="col-12 col-xl-8">
+                                <div class="col-12 col-xl-8" id="s_payment">
                                     <div class="text-warning">Select or enter amount</div>
 
                                     {% for amount in support_amount.split(',') %}
@@ -469,13 +500,7 @@
                                                     d="M4.34326 15.6569L7.8788 12.1213M15.657 4.34315L12.1214 7.87869">
                                                 </path>
                                             </svg>
-
                                             <input type="number" class="form-control" placeholder="enter amount to pay">
-                                        </div>
-
-                                        <div class="mb-3 filled w-100 d-flex flex-column">
-                                            <i data-acorn-icon="user"></i>
-                                            <input type="amount" class="form-control" , placeholder="select payment type" />
                                         </div>
                                         
                                         <!--<div class="row g-3">-->
@@ -491,19 +516,19 @@
                                             <input class="form-check-input" name="subscription" type="checkbox" id="subscription" value="once">
                                             <label class="form-check-label" for="subscription">one time</label>
                                             </div>
-                                            
+
                                             <div class="form-check form-check-inline">
                                             <input class="form-check-input" name="subscription" type="checkbox" id="subscription" value="week">
                                             <label class="form-check-label" for="subscription">weekly</label>
                                             </div>
 
                                             <div class="form-check form-check-inline">
-                                            <input class="form-check-input" name="subscription" type="checkbox" id="subscription" value="month" disabled="disabled">
+                                            <input class="form-check-input" name="subscription" type="checkbox" id="subscription" value="month">
                                             <label class="form-check-label" for="subscription">monthly</label>
                                             </div>
 
                                             <div class="form-check form-check-inline">
-                                            <input class="form-check-input" name="subscription" type="checkbox" id="subscription" value="year">
+                                            <input class="form-check-input" name="subscription" type="checkbox" id="subscription" value="year" disabled="disabled">
                                             <label class="form-check-label" for="subscription">annual</label>
                                             </div>
                                             </div>
@@ -521,6 +546,7 @@
                                             
                                             <span>Support Now</span>
                                         </button>
+
                                     </form>
                                 </div>
                                 <div class="col-12 col-xl-4">
@@ -537,8 +563,25 @@
 </main>
 
 {% block specific_page_js %}
-<script src="{{ url_for('static', filename='js/vendor/movecontent.js')}}"></script>
-<script src="{{ url_for('static', filename='js/pages/course.list.js')}}"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Function to get query parameters
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                make_pay: params.get('make_pay')
+            };
+        }
+
+        // Check if make_pay is true
+        const queryParams = getQueryParams();
+        if (queryParams.make_pay === 'true') {
+            // Scroll to the element
+            document.getElementById('support_us_h').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+</script>
 {% endblock specific_page_js %}
 
 {% endblock content %}
