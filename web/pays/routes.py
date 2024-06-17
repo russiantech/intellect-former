@@ -1,7 +1,7 @@
 import json, traceback, jsonschema, time, requests
 from flask_login import current_user, login_required
 from flask import current_app, jsonify, redirect, request, Blueprint, url_for
-from web.models import db, Payment, Course, Enrollment
+from web.models import db, User, Payment, Course, Enrollment
 from web.apis.make_slug import generate_random_id
 from web.apis.errors import handle_response
 
@@ -12,9 +12,19 @@ load_dotenv()
 
 pay = Blueprint('pay', __name__)
 
+# Make a POST request to get the payment link
+headers = {
+    "accept": "application/json",
+    "Authorization": f"Bearer {getenv('RAVE_SECRET_KEY')}",
+    "Content-Type": "application/json"
+}
+
+url = "https://api.flutterwave.com/v3/payments"
+
 @pay.route('/init-payment/<string:course_slug>', methods=['POST', 'GET'])
 @login_required
 def init_payment(course_slug):
+    #global url
     try:
         # Retrieve course information from the database
         #course = Course.query.get(course_id)
@@ -40,13 +50,7 @@ def init_payment(course_slug):
             }
         }
 
-        # Make a POST request to get the payment link
-        headers = {
-            "Authorization": f"Bearer {getenv('RAVE_SECRET_KEY')}",
-            "Content-Type": "application/json"
-        }
-
-        response = requests.post("https://api.flutterwave.com/v3/payments", json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers)
         response_data = response.json() if response else { }
         payment_link = response_data.get("data", {}).get("link")
 
@@ -101,7 +105,7 @@ def payment_callback():
             # Check if the request was successful
             if response.status_code == 200:
                 # Convert the JSON string to a Python dictionary
-                response_data = response.json() if response else {}
+                response_data = response.json() if response else response.text
 
                 # Check if transaction data exists in the response
                 if 'data' in response_data:
@@ -184,3 +188,125 @@ def check_pending():
         print(type(response))
         return f"Error:-> {(e) }"
 
+
+@pay.route('/init-support-pay', methods=['GET', 'POST'])
+def support_pay():
+    try:
+        global url
+        if request.method == "POST":
+            # Prepare payment payload
+            payload = {
+                "tx_ref": f"Techa-{generate_random_id(k=5)}",
+                "amount": int(request.args.get('amount', 0)),
+                "currency": "USD",
+                #"redirect_url": f"{request.url_root}payment-callback",
+                "redirect_url": f"{request.url_root}",
+                "customer": {
+                    "email": current_user.email if current_user.is_authenticated else request.args.get('email', 'hello@intellect.com'),
+                    "phonenumber": current_user.phone if current_user.is_authenticated and current_user.phone else None,
+                    "name": current_user.name or current_user.username if current_user.is_authenticated else request.args.get('email', 'hello@intellect.techa.tech')
+                },
+                
+                "payment_options": "card, ussd, banktransfer, credit, mobilemoneyghana",
+                "customizations": {
+                    "title": f"Support . Russian Developers",
+                    "logo": url_for('static', filename='img/favicon/favicon.png', _external=True)
+                }
+            }
+
+            # is it subscription payment , just check ?
+            if request.args.get('interval', None) is not None:
+                #update payload and url to point to subscription endpoint
+                url = "https://api.flutterwave.com/v3/payment-plans"
+                payload = {
+                "amount": payload['amount'],
+                "name": payload['customizations']["title"],
+                "interval": int(request.args.get('interval', None)),
+                "duration": request.args.get('interval', 48) 
+                }
+                
+                response = requests.post( url, json=payload, headers=headers)
+            else:
+                response = requests.post( url, json=payload, headers=headers)
+                response_data = response.json() or response.text  if response else { }
+            
+                payment_link = response_data.get("data", {}).get("link")
+
+                if not payment_link:
+                    return handle_response(message="Failed to retrieve payment link", alert='alert-danger')
+            
+            # Check if user exists with the same email
+            request_data = request.form if request.form else { }
+            
+            email = request_data.get('email', None)
+         
+            if email is None:
+                return jsonify({'message': 'Ensure your email is provided'})
+            
+            user = User.query.filter_by(email=email).first()
+            
+            if user is None:
+                # User does not exist, create a new user
+                user_data = {
+                    'username': email,
+                    'email': email,
+                    'password': request.args.get('password', generate_random_id(k=5))
+                }
+                new_user = User(**user_data)
+                db.session.add(new_user)
+                db.session.commit()
+                db.session.refresh(new_user)  # Refresh the session to get the new user ID
+                user_id = new_user.id
+            else:
+                # User already exists, use the existing user's ID
+                user_id = user.id
+
+            # Save transaction details to the db
+            payment_data = {
+                'currency': payload['currency'],
+                'tx_amount': payload['amount'],
+                'tx_ref': payload['tx_ref'],
+                'tx_status': 'pending',
+                'provider': 'flutterwave',
+                'tx_id': None,
+                'user_id': user_id,
+                'course_id': None
+            }
+            new_payment = Payment(**payment_data)
+            db.session.add(new_payment)
+            db.session.commit()
+
+
+            # Redirect the user to the payment link
+            return redirect(payment_link)
+    
+        else:
+                
+            # is it subscription payment , just check ?
+            #if request.args.get('interval', None) is not None:
+            #update payload and url to point to subscription endpoint
+            url = "https://api.flutterwave.com/v3/payment-plans"
+            payload = {
+            "amount": request.args.get('amount', 0),
+            "name": request.args.get('name', None),
+            "interval": request.args.get('interval', None) ,
+            "duration": request.args.get('interval', 48) 
+            }
+            
+            response = requests.post(url, json=payload, headers=headers)
+            
+            response_data = response.json() if response.text else { }
+            
+            if response_data.get("status") == "success":
+                return handle_response(
+                    message=f"Successfully subscribed to\
+                        {response_data.get('interval')} for the period of {response_data.get('duration')} ",
+                    alert='alert-danger')
+            
+            print(response.text)
+            print(response.json())
+                
+    # except Exception as e:
+    except Exception as e:
+        print(traceback.print_exc())
+        return f"Error:-> {e}"

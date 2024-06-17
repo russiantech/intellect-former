@@ -77,7 +77,14 @@ def welcome(v=None):
 def us():
     brand = Brand.query.filter_by(id=2).first()
     support_amount = "30, 40, 50, 70, 80, 90, 100, 200, 300, 400, 500"
-    return render_template('welcome/us.html', support_amount=support_amount, brand=brand, title='Intellect')
+    support_interval = "daily, weekly, monthly, quarterly, yearly"
+    context = {
+        "brand":brand, 
+        "title" :'Us . Intellect',
+        "support_amount" : support_amount, 
+        "support_interval" : support_interval, 
+    }
+    return render_template('welcome/us.html', **context)
 
 """ @main.route("/")
 def us():
